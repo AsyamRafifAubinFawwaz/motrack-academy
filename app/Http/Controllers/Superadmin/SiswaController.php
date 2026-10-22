@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Superadmin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Course;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -15,7 +18,7 @@ class SiswaController extends Controller
     {
         $siswas = User::query()
             ->where('role', 'siswa')
-            ->when($request->search, fn ($q, $s) => $q->where('name', 'like', "%{$s}%"))
+            ->when($request->search, fn($q, $s) => $q->where('name', 'like', "%{$s}%"))
             ->latest()
             ->paginate(10)
             ->withQueryString();
@@ -26,22 +29,66 @@ class SiswaController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function create(): Response
     {
-        $validated = $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8',
+        $courses = Course::query()
+            ->with(['mentors:id,name'])
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return Inertia::render('superadmin/siswa/create', [
+            'courses' => $courses,
+        ]);
+    }
+
+
+
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'name' => ['required', 'string', 'max:255'],
+        'email' => ['required', 'email', 'unique:users,email'],
+        'password' => ['required', 'string', 'min:8'],
+        'course_id' => ['required', 'integer', 'exists:courses,id'],
+        'mentor_id' => ['required', 'integer', 'exists:users,id'],
+    ]);
+
+    DB::transaction(function () use ($validated) {
+        $course = Course::query()->find($validated['course_id']);
+
+        if (! $course) {
+            throw ValidationException::withMessages([
+                'course_id' => 'Kelas yang dipilih tidak ditemukan.',
+            ]);
+        }
+
+        $mentorIsAssigned = $course->mentors()
+            ->where('users.role', 'mentor')
+            ->whereKey($validated['mentor_id'])
+            ->exists();
+
+        if (! $mentorIsAssigned) {
+            throw ValidationException::withMessages([
+                'mentor_id' => 'Mentor yang dipilih tidak terdaftar pada kelas tersebut.',
+            ]);
+        }
+
+        $siswa = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'role' => 'siswa',
         ]);
 
-        $validated['role']     = 'siswa';
-        $validated['password'] = Hash::make($validated['password']);
+        $course->students()->attach($siswa->id, [
+            'mentor_id' => $validated['mentor_id'],
+            'status' => 'active',
+        ]);
+    });
 
-        User::create($validated);
-
-        return redirect()->route('superadmin.siswa.index')
-            ->with('success', 'Siswa berhasil ditambahkan');
-    }
+    return redirect()->route('superadmin.siswa.index')
+        ->with('success', 'Siswa berhasil ditambahkan dan didaftarkan ke kelas');
+}
 
     public function update(Request $request, User $siswa)
     {

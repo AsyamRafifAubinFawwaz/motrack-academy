@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Superadmin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Course;
 use App\Models\Invoice;
 use App\Models\User;
 use Inertia\Inertia;
@@ -13,16 +12,30 @@ class DashboardController extends Controller
 {
     public function index(): Response
     {
-        $totalPendapatan = Invoice::where('status', 'paid')->sum('amount');
-        $totalKelas      = Course::count();
-        $totalUser       = User::whereIn('role', ['mentor', 'siswa'])->count();
+        $totalPendapatan = (int) Invoice::where('status', 'paid')->sum('amount');
+        $totalSiswa = User::where('role', 'siswa')->count();
+        $totalMentor = User::where('role', 'mentor')->count();
+        $pendapatanPerKursus = Invoice::query()
+            ->join('courses', 'courses.id', '=', 'invoices.course_id')
+            ->where('invoices.status', 'paid')
+            ->select('courses.id', 'courses.name')
+            ->selectRaw('SUM(invoices.amount) as amount')
+            ->groupBy('courses.id', 'courses.name')
+            ->orderByDesc('amount')
+            ->limit(8)
+            ->get()
+            ->map(fn (Invoice $invoice) => [
+                'name' => $invoice->name,
+                'amount' => (int) $invoice->amount,
+            ]);
 
         return Inertia::render('superadmin/dashboard', [
             'stats' => [
                 'total_pendapatan' => $totalPendapatan,
-                'total_kelas'      => $totalKelas,
-                'total_user'       => $totalUser,
+                'total_siswa' => $totalSiswa,
+                'total_mentor' => $totalMentor,
             ],
+            'pendapatan_per_kursus' => $pendapatanPerKursus,
         ]);
     }
 }

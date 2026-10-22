@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Superadmin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Course;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -26,12 +25,24 @@ class CourseController extends Controller
         ]);
     }
 
+    public function create(): Response
+    {
+        return Inertia::render('superadmin/course/create');
+    }
+
+    public function edit(Course $course): Response
+    {
+        return Inertia::render('superadmin/course/edit', [
+            'course' => $course,
+        ]);
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name'        => 'required|string|max:255',
+            'name' => 'required|string|max:255',
             'description' => 'required|string',
-            'price'       => 'required|integer|min:0',
+            'price' => 'required|integer|min:0',
             'cover_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
@@ -45,9 +56,9 @@ class CourseController extends Controller
     public function update(Request $request, Course $course)
     {
         $validated = $request->validate([
-            'name'        => 'required|string|max:255',
+            'name' => 'required|string|max:255',
             'description' => 'required|string',
-            'price'       => 'required|integer|min:0',
+            'price' => 'required|integer|min:0',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 

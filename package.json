@@ -3,11 +3,11 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "vp build",
-        "build:ssr": "vp build && vp build --ssr",
-        "dev": "vp dev",
-        "check": "vp check",
-        "check:fix": "vp check --fix",
+        "build": "vite build",
+        "build:ssr": "vite build && vite build --ssr",
+        "dev": "vite",
+        "check": "tsc --noEmit",
+        "check:fix": "tsc --noEmit",
         "types:check": "tsc --noEmit"
     },
     "dependencies": {
@@ -31,14 +31,19 @@
         "@types/react": "^19.2.0",
         "@types/react-dom": "^19.2.0",
         "@vitejs/plugin-react": "^6.1.1",
+        "chart.js": "^4.5.1",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "concurrently": "^10.0.3",
+        "html-to-image": "^1.11.13",
         "input-otp": "^1.4.2",
-        "laravel-vite-plugin": "^3.0.0",
+        "jspdf": "^4.2.1",
+        "laravel-vite-plugin": "^3.2.0",
         "lucide-react": "^0.475.0",
         "react": "^19.2.0",
+        "react-chartjs-2": "^5.3.1",
         "react-dom": "^19.2.0",
+        "react-icons": "^5.7.0",
         "sonner": "^2.0.0",
         "tailwind-merge": "^3.0.1",
         "tailwindcss": "^4.0.0",
@@ -50,8 +55,7 @@
         "@laravel/vite-plugin-wayfinder": "^0.1.3",
         "@rolldown/plugin-babel": "^0.2.3",
         "@types/node": "^22.13.5",
-        "babel-plugin-react-compiler": "^1.0.0",
-        "vite-plus": "0.3.0"
+        "babel-plugin-react-compiler": "^1.0.0"
     },
     "optionalDependencies": {
         "@laravel/multiplex": "^0.4.1",
